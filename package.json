@@ -1,0 +1,16 @@
+{
+  "name": "tugas-sesi-9-selenium-mocha",
+  "version": "1.0.0",
+  "description": "SauceDemo automation test - Session 9",
+  "scripts": {
+    "test": "mocha tests/sesi-9/farhan_sesi9.js --timeout 60000",
+    "html-report": "mocha tests/sesi-9/farhan_sesi9.js --timeout 60000 --reporter mocha-simple-html-reporter --reporter-options output=reports/report-sesi-9.html"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.17.0"
+  },
+  "devDependencies": {
+    "mocha": "^10.4.0",
+    "mocha-simple-html-reporter": "^2.0.0"
+  }
+}
