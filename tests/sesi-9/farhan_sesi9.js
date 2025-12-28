@@ -81,6 +81,14 @@ describe("SauceDemo - Improve with Hooks", function () {
     );
 
     assert.ok(await cartItem.isDisplayed());
+<<<<<<< HEAD
+=======
+  });
+
+  // ===== AFTER =====
+  after(async function () {
+    await driver.quit();
+>>>>>>> 8d0de401edab63d882cadbf2398e5ab3cb55a925
   });
 
   // ===== AFTER =====
