@@ -1,55 +1,90 @@
 const { Builder, By, until } = require("selenium-webdriver");
+const chrome = require("selenium-webdriver/chrome");
 const assert = require("assert");
 
-describe("SauceDemo - Tugas Sesi 9", function () {
+describe("SauceDemo - Improve with Hooks", function () {
   this.timeout(60000);
   let driver;
 
-  before(async () => {
-    driver = await new Builder().forBrowser("chrome").build();
-  });
+  // ===== BEFORE: setup browser + login sekali =====
+  before(async function () {
+    const options = new chrome.Options();
+    options.addArguments(
+      "--disable-notifications",
+      "--disable-infobars",
+      "--disable-save-password-bubble",
+      "--disable-password-manager",
+      "--disable-features=PasswordLeakDetection"
+    );
 
-  after(async () => {
-    await driver.quit();
-  });
+    options.setUserPreferences({
+      "credentials_enable_service": false,
+      "profile.password_manager_enabled": false
+    });
 
-  it("Login sukses dan sort produk dari Z ke A", async () => {
-    // ===== LOGIN =====
+    driver = await new Builder()
+      .forBrowser("chrome")
+      .setChromeOptions(options)
+      .build();
+
+    // Login
     await driver.get("https://www.saucedemo.com/");
-
-    await driver.findElement(By.id("user-name"))
-      .sendKeys("standard_user");
-
-    await driver.findElement(By.id("password"))
-      .sendKeys("secret_sauce");
-
+    await driver.findElement(By.id("user-name")).sendKeys("standard_user");
+    await driver.findElement(By.id("password")).sendKeys("secret_sauce");
     await driver.findElement(By.id("login-button")).click();
 
-    await driver.wait(until.urlContains("inventory"), 60000);
+    await driver.wait(
+      until.elementLocated(By.className("inventory_list")),
+      10000
+    );
+  });
 
-    const currentUrl = await driver.getCurrentUrl();
-    assert.ok(currentUrl.includes("inventory.html"));
+  // ===== BEFORE EACH: reset cart =====
+  beforeEach(async function () {
+    await driver.get("https://www.saucedemo.com/cart.html");
 
-    // ===== SORT Z → A =====
-    const sortDropdown = await driver.findElement(
-      By.className("product_sort_container")
+    const removeButtons = await driver.findElements(
+      By.xpath("//button[text()='Remove']")
     );
 
-    await sortDropdown.sendKeys("Name (Z to A)");
-
-    const items = await driver.findElements(
-      By.className("inventory_item_name")
-    );
-
-    const actualNames = [];
-    for (let item of items) {
-      actualNames.push(await item.getText());
+    for (let btn of removeButtons) {
+      await btn.click();
     }
 
-    const expectedNames = [...actualNames].sort((a, b) =>
-      b.localeCompare(a)
+    await driver.get("https://www.saucedemo.com/inventory.html");
+  });
+
+  // ===== TEST 1 =====
+  it("Berhasil masuk ke halaman inventory", async function () {
+    const inventory = await driver.findElement(
+      By.className("inventory_list")
+    );
+    assert.ok(await inventory.isDisplayed());
+  });
+
+  // ===== TEST 2 (VALIDASI PALING BENAR) =====
+  it("Berhasil add item ke cart", async function () {
+    // Add item
+    await driver.findElement(
+      By.id("add-to-cart-sauce-labs-backpack")
+    ).click();
+
+    // Masuk ke cart page
+    await driver.findElement(
+      By.className("shopping_cart_link")
+    ).click();
+
+    // Validasi item benar-benar ada di cart
+    const cartItem = await driver.wait(
+      until.elementLocated(By.className("cart_item")),
+      5000
     );
 
-    assert.deepStrictEqual(actualNames, expectedNames);
+    assert.ok(await cartItem.isDisplayed());
+  });
+
+  // ===== AFTER =====
+  after(async function () {
+    await driver.quit();
   });
 });
